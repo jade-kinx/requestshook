@@ -1,9 +1,11 @@
 import uuid
 import functools
-from requestshook._utils import (
-    write_error,
+from requestshook.utils import (
+    write_syslog,
     get_current_service,
-    get_service_from_url
+    get_service_from_url,
+    add_request_id,
+    add_request_from,
 )
 
 # get Requests.PreparedRequest from args, kwargs if exists
@@ -18,18 +20,17 @@ def get_prepared_request(*args, **kwargs):
 
     return None
 
-
-def inject_service_name(f):
+# register hook
+def register_hook(f):
     @functools.wraps(f)
     def inner(*args, **kwargs):
         try:
             req = get_prepared_request(*args, **kwargs)
             if req and hasattr(req, 'headers'):
-                req.headers['x-requestshook-request-id'] = uuid.uuid4().hex
-                req.headers['x-requestshook-request-from'] = get_current_service()
-                req.headers['x-requestshook-request-to'] = get_service_from_url(req.url)
+                add_request_id(req.headers, uuid.uuid4().hex)
+                add_request_from(req.headers, get_current_service() or 'unknown')
         except Exception as e:
-            write_error(__name__, e)
+            write_syslog(e)
 
         # call requests.HttpAdapter.send()
         return f(*args, **kwargs)

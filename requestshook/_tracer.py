@@ -9,7 +9,7 @@ from pathlib import Path
 from urllib3.util import parse_url
 
 from requestshook.utils import (
-    write_error,
+    write_syslog,
     write_text,
     format_header,
     beautify_json,
@@ -32,7 +32,7 @@ try:
         os.makedirs(LOG_PATH)
         if os.name == 'posix': os.chmod(LOG_PATH, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
 except Exception as e:
-    write_error(e)
+    write_syslog(e)
 
 # format response body
 def format_body(response):
@@ -91,7 +91,7 @@ def write_current_seq_id(filepath, seq):
         with open(filepath, 'w') as file:
             file.write('{0}'.format(seq))
     except Exception as e:
-        write_error(e)
+        write_syslog(e)
 
 # write log for request
 def write_request(request, seq):
@@ -246,7 +246,7 @@ def should_hook(prepared):
         if not services or any(service in current_service for service in services): return True
 
     except Exception as e:
-        write_error(e)
+        write_syslog(e)
 
     # don't hook in default
     return False
@@ -271,7 +271,7 @@ def trace(f):
             if request:
                 write_request(request, seq)
         except Exception as e:
-            write_error(e)
+            write_syslog(e)
 
         # call requests.HttpAdapter.send()
         r = f(*args, **kwargs)
@@ -284,7 +284,7 @@ def trace(f):
             # write response log (should increase seq.id)
             write_response(r, next_seq_id())
         except Exception as e:
-            write_error(e)
+            write_syslog(e)
 
         return r
     return inner

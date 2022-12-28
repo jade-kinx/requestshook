@@ -1,9 +1,7 @@
 __all__ = [
-#    'trace',
-    'inject_service_name',
-    'SeqLogger',
+    'register_hook',
+    'RequestsHookLogger',
 ]
 
-#from requestshook.tracer import trace
-from requestshook.req_hook import inject_service_name
-from requestshook.seq_logger import SeqLogger
+from requestshook.hook import register_hook
+from requestshook.middleware import RequestsHookLogger
