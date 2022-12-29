@@ -1,7 +1,7 @@
 __all__ = [
-    'register_hook',
-    'RequestsHookLogger',
+    'requestshook',
+    'RequestsHookMiddleware',
 ]
 
-from requestshook.hook import register_hook
-from requestshook.middleware import RequestsHookLogger
+from requestshook.requestshook import requestshook
+from requestshook.requestshook_middleware import RequestsHookMiddleware

@@ -10,19 +10,33 @@ try:
 except:
     syslog = None
 
-# requestshook header parameters
-X_REQUESTSHOOK_REQUEST_ID = 'X-Requestshook-Request-Id'
-X_REQUESTSHOOK_REQUEST_FROM = 'X-Requestshook-Request-From'
-
-PACKAGE_NAME = __package__ or 'requestshook'
-
 # write message to syslog
 def write_syslog(*messages):
-    if messages:
-        if syslog:
-            syslog.syslog(f'{PACKAGE_NAME}: {" ".join(messages)}')
-        else:
-            print(' '.join(messages))
+    message = f"@{PACKAGE_NAME}: {' '.join(messages or [])}"
+    syslog.syslog(f'{message}') if syslog else print(f'{message}\n')
+
+# package name : requestshook
+PACKAGE_NAME = __package__ or "requestshook"
+
+# log path, config path
+LOG_PATH = f'/var/log/{PACKAGE_NAME}' 
+CONF_PATH = f'/etc/{PACKAGE_NAME}'
+if os.name == 'nt': 
+    LOG_PATH = os.path.expanduser(os.path.join('~', 'log', PACKAGE_NAME))
+    CONF_PATH = os.path.expanduser(os.path.join('~', 'conf'))
+
+LOG_FILE_PATH = os.path.join(LOG_PATH, f'{PACKAGE_NAME}.log')
+CONF_FILE_PATH = os.path.join(CONF_PATH, f'{PACKAGE_NAME}.conf')
+DIAGRAM_FILE_PATH = os.path.join(LOG_PATH, f'{PACKAGE_NAME}-diagram.md')
+DOC_FILE_PATH = os.path.join(LOG_PATH, f'{PACKAGE_NAME}-doc.md')
+
+try:
+    # create log path if not exists...
+    if not os.path.exists(LOG_PATH):
+        os.makedirs(LOG_PATH)
+        if os.name == 'posix': os.chmod(LOG_PATH, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+except Exception as e:
+    write_syslog(e)
 
 # write text to file
 def write_text(file, *messages):
@@ -37,21 +51,6 @@ def write_text(file, *messages):
         with open(file, 'a') as f:
             f.write('{0}\n'.format(' '.join(messages)))
 
-# beautify json string
-def beautify_json(body, indent=2):
-    try:
-        # string
-        if isinstance(body, str): return json.dumps(json.loads(body), indent=indent)
-
-        # bytes
-        if isinstance(body, bytes): return json.dumps(json.loads(body.decode()), indent=indent)
-
-        # object
-        return json.dumps(body, indent=indent)
-    except Exception as e:
-        write_syslog(repr(e))
-        return None
-
 # format headers( headers should be dictionary type )
 def format_header(headers):
     try:
@@ -62,20 +61,21 @@ def format_header(headers):
 
 # format request/response body
 def format_body(req_or_resp):
-    body = req_or_resp.body
-    if not body: return 'none'
 
-    # try get json format
+    # no body
+    if not req_or_resp.body: return 'none'
+
+    # try to get body as json string
     try:
         return json.dumps(req_or_resp.json, indent=2)
     except:
         pass
 
-    # decode text or bytes
+    # try to get body as text/html or bytes(32)
     try:
-        return body.decode()
+        return req_or_resp.body.decode()
     except (UnicodeDecodeError, AttributeError):
-        return f"{body[:32]}..."
+        return f"{req_or_resp.body[:32]}..."
 
 
 # get service name from url (devstack default environment)
@@ -115,8 +115,11 @@ def get_current_service():
         matches = [service for arg in (args or []) for (service, tag) in services.items() if tag == arg or service in arg]
         return matches[0] if matches else p.name()
     except:
-        return None
+        return 'unknown'
 
+# requestshook header parameters
+X_REQUESTSHOOK_REQUEST_ID = 'X-Requestshook-Request-Id'
+X_REQUESTSHOOK_REQUEST_FROM = 'X-Requestshook-Request-From'
 
 # parse 'x-requestshook-request-id' from header
 def get_request_id(headers, fallback = None):

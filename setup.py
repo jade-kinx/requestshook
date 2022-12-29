@@ -21,7 +21,7 @@ setuptools.setup(
     python_requires='>=3.8',
     entry_points={
         'requestshook.api_middleware': [
-            'requestshook_logger = requestshook:RequestsHookLogger',
+            'requestshook = requestshook:RequestsHookMiddleware',
         ]
     },
 )
