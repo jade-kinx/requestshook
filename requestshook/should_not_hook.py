@@ -19,24 +19,31 @@ from requestshook.utils import (
 #         return fallback
 
 
-DEFAULT_REPLACES = {
-    # '{uuid}': '([a-fA-F0-9-]+)',
-    # '{name}': '(.+?)'
+DEFAULT_MAPPINGS = {
+    '{uuid}': '([a-fA-F0-9-]+)',
+    '{name}': '(.+?)'
 }
 
 DEFAULT_FILTERS = [
-#   {
-#     "from": "nova-compute",
-#     "to": "placement-api",
-#     "method": "GET",
-#     "urls": [
-#       "/identity/v3/auth/tokens",
-#       "/resource_providers/{uuid}/inventories",
-#       "/resource_providers/{uuid}/aggregates",
-#       "/resource_providers/{uuid}/allocations",
-#       "/resource_providers/{uuid}/traits"
-#     ]
-#   }
+    {
+        "from": "nova-compute",
+        "to": "placement-api",
+        "method": "GET",
+        "urls": [
+            "/placement/resource_providers",
+            "/placement/resource_providers/{uuid}/inventories",
+            "/placement/resource_providers/{uuid}/aggregates",
+            "/placement/resource_providers/{uuid}/allocations",
+            "/placement/resource_providers/{uuid}/traits"
+        ]
+    },
+    {
+        "from": "placement-api",
+        "to": "keystone",
+        "urls": [
+            "/identity/"
+        ]
+    }
 ]
 
 # config file path: /etc/requestshook/should_not_hook.json
@@ -51,16 +58,16 @@ def load_config():
         write_syslog('loading should_not_hook.json failed')
         return {
             'filters': DEFAULT_FILTERS,
-            'replaces': DEFAULT_REPLACES
+            'mappings': DEFAULT_MAPPINGS
         }
 
-def get_filtered_url(url, replaces):
-    for k, v in replaces.items():
+def get_filtered_url(url, mappings):
+    for k, v in mappings.items():
         url = url.replace(k, v)
     return url
 
 # test match for the request
-def match_filter(filter, replaces, request_from, request_to, request_method, request_url):
+def match_filter(filter, mappings, request_from, request_to, request_method, request_url):
 
     # from
     filter_from = filter.get('from')
@@ -76,13 +83,13 @@ def match_filter(filter, replaces, request_from, request_to, request_method, req
 
     # urls
     filter_urls = filter.get('urls')
-    return not filter_urls or any(re.search(get_filtered_url(filter_url, replaces), request_url) for filter_url in filter_urls)
+    return not filter_urls or any(re.search(get_filtered_url(filter_url, mappings), request_url) for filter_url in filter_urls)
 
 # should not hook for this request?
 def should_not_hook(request_from, request_to, request_method, request_url):
     config = load_config()
 
     filters = config.get('filters') or DEFAULT_FILTERS
-    replaces = config.get('replaces') or DEFAULT_REPLACES
+    mappings = config.get('mappings') or DEFAULT_MAPPINGS
 
-    return any(match_filter(filter, replaces, request_from, request_to, request_method, request_url) for filter in filters)
+    return any(match_filter(filter, mappings, request_from, request_to, request_method, request_url) for filter in filters)

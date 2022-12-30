@@ -1,6 +1,6 @@
 from requestshook import should_not_hook as should_hook
 
-should_hook.DEFAULT_REPLACES = {
+should_hook.DEFAULT_MAPPINGS = {
     '{uuid}': '([a-fA-F0-9-]+)',
     '{name}': '(.+?)'
 }
@@ -11,7 +11,6 @@ should_hook.DEFAULT_FILTERS = [
     "to": "placement-api",
     "method": "GET",
     "urls": [
-      "/identity/v3/auth/tokens",
       "/resource_providers/{uuid}/inventories",
       "/resource_providers/{uuid}/aggregates",
       "/resource_providers/{uuid}/allocations",
@@ -22,7 +21,6 @@ should_hook.DEFAULT_FILTERS = [
   {
     "from": "placement-api",
     "to": "keystone",
-    # "method": "GET",
     "urls": [
       "/identity/",
     ]

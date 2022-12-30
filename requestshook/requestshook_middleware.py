@@ -46,7 +46,7 @@ class RequestsHookMiddleware(object):
     def __call__(self, req):
 
         # should not hook for this request?
-        if should_not_hook(get_request_from(req.headers, ''), self.service, req.method, req.url):
+        if should_not_hook(get_request_from(req.headers, get_user_agent(req.headers)), self.service, req.method, req.url):
             write_syslog("ignoring request for", req.method, req.url)
             return req.get_response(self.application)
 
@@ -132,6 +132,9 @@ class LogWriter(object):
         self.header = format_header(self.headers)
         self.body = format_body(resp or req)
 
+    def get_service_name_for_diagram(self, service):
+        return service
+
     # write request
     def write_request(self):
         self.write_request_log()
@@ -177,12 +180,12 @@ class LogWriter(object):
             `{self.req_from}` --> `{self.service}`
 
             === "Header"
-                ``` http title="{self.req.method} {self.url}"
+                ``` http title="{self.req.method} {self.url.path}" linenums="1"
             {header}
                 ```
 
             === "Body"
-                ```
+                ``` json title="{self.req.method} {self.url.path}" linenums="1"
             {body}
                 ```
         """).format(
@@ -198,12 +201,12 @@ class LogWriter(object):
             `{self.req_from}` <-- `{self.service}`
 
             === "Header"
-                ``` http title="{self.resp.status} {self.url}"
+                ``` http title="{self.resp.status} {self.url.path}" linenums="1"
             {header}
                 ```
 
             === "Body"
-                ```
+                ``` json title="{self.resp.status} {self.url.path}" linenums="1"
             {body}
                 ```
         """).format(
