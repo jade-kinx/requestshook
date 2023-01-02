@@ -111,9 +111,6 @@ class RequestsHookMiddleware(object):
 
         return resp
 
-    def should_not_hook(self):
-        filters = json.load
-
 # formatted log writer class
 class LogWriter(object):
     def __init__(self, req = None, resp = None):
