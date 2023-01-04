@@ -51,7 +51,7 @@ class RequestsHookMiddleware(object):
         # requestshook enabled?
         cfg = configparser.ConfigParser()
         cfg.read(CONF_FILE_PATH)
-        enabled = cfg.get('default', 'enabled', fallback=False)
+        enabled = cfg.get('DEFAULT', 'enabled', fallback=False)
 
         # should not hook for this request?
         if not enabled or should_not_hook(get_request_from(req.headers, get_user_agent(req.headers)), self.service, req.method, req.url):
