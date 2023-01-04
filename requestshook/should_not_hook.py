@@ -7,21 +7,8 @@ from requestshook.utils import (
     write_syslog
 )
 
-# # configuration
-# CONF = configparser.ConfigParser()
-# CONF.read(os.path.join(CONF_PATH, f'{PACKAGE_NAME}.conf'))
-
-# # get multiline list from ini style config
-# def get_config_list(section, option, fallback=[]):
-#     try:
-#         return json.loads(CONF.get(section, option, fallback=fallback))
-#     except:
-#         return fallback
-
-
 DEFAULT_MAPPINGS = {
     '{uuid}': '([a-fA-F0-9-]+)',
-    '{name}': '(.+?)'
 }
 
 DEFAULT_FILTERS = [

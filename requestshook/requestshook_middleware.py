@@ -1,9 +1,6 @@
 import configparser
-import json
-import os
 import webob.dec
 import webob.exc
-
 import textwrap
 import uuid
 from urllib3.util import parse_url
