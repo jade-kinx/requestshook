@@ -1,6 +1,8 @@
+import configparser
 import uuid
 import functools
 from requestshook.utils import (
+    CONF_FILE_PATH,
     write_syslog,
     get_current_service,
     add_request_id,
@@ -25,13 +27,20 @@ def get_prepared_request(*args, **kwargs):
 def requestshook(f):
     @functools.wraps(f)
     def inner(*args, **kwargs):
-        try:
-            req = get_prepared_request(*args, **kwargs)
-            if req and hasattr(req, 'headers'):
-                add_request_id(req.headers, uuid.uuid4().hex)
-                add_request_from(req.headers, get_current_service() or 'unknown')
-        except Exception as e:
-            write_syslog(e)
+
+        # requestshook enabled?
+        cfg = configparser.ConfigParser()
+        cfg.read(CONF_FILE_PATH)
+        enabled = cfg.getboolean('DEFAULT', 'enabled', fallback=False)
+        if enabled:
+            # add request-id, request-from to header
+            try:
+                req = get_prepared_request(*args, **kwargs)
+                if req and hasattr(req, 'headers'):
+                    add_request_id(req.headers, uuid.uuid4().hex)
+                    add_request_from(req.headers, get_current_service() or 'unknown')
+            except Exception as e:
+                write_syslog(e)
 
         # call requests.adapters.HttpAdapter.send()
         return f(*args, **kwargs)

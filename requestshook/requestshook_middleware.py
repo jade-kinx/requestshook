@@ -52,9 +52,11 @@ class RequestsHookMiddleware(object):
         cfg = configparser.ConfigParser()
         cfg.read(CONF_FILE_PATH)
         enabled = cfg.getboolean('DEFAULT', 'enabled', fallback=False)
+        if not enabled:
+            return req.get_response(self.application)
 
         # should not hook for this request?
-        if not enabled or should_not_hook(get_request_from(req.headers, get_user_agent(req.headers)), self.service, req.method, req.url):
+        if should_not_hook(get_request_from(req.headers, get_user_agent(req.headers)), self.service, req.method, req.url):
             write_syslog("ignoring request for", req.method, req.url)
             return req.get_response(self.application)
 
