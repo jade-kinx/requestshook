@@ -1,4 +1,6 @@
+import configparser
 import json
+import os
 import webob.dec
 import webob.exc
 
@@ -7,6 +9,7 @@ import uuid
 from urllib3.util import parse_url
 
 from requestshook.utils import (
+    CONF_FILE_PATH,
     LOG_FILE_PATH,
     DIAGRAM_FILE_PATH,
     DOC_FILE_PATH,
@@ -31,7 +34,7 @@ class RequestsHookMiddleware(object):
         self.application = application
         self.conf = conf or {}
         self.service = get_current_service() or 'unknown'
-    
+
     @classmethod
     def factory(cls, global_conf, **local_conf):
         conf = global_conf.copy() if global_conf else {}
@@ -45,8 +48,13 @@ class RequestsHookMiddleware(object):
     @webob.dec.wsgify
     def __call__(self, req):
 
+        # requestshook enabled?
+        cfg = configparser.ConfigParser()
+        cfg.read(CONF_FILE_PATH)
+        enabled = cfg.get('default', 'enabled', fallback=False)
+
         # should not hook for this request?
-        if should_not_hook(get_request_from(req.headers, get_user_agent(req.headers)), self.service, req.method, req.url):
+        if not enabled or should_not_hook(get_request_from(req.headers, get_user_agent(req.headers)), self.service, req.method, req.url):
             write_syslog("ignoring request for", req.method, req.url)
             return req.get_response(self.application)
 
